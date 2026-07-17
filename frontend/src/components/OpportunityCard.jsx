@@ -32,6 +32,21 @@ const toLabel = (value) => {
   return String(value);
 };
 
+const getAcademicEligibilityLines = (opportunity) => {
+  const lines = [];
+  if (opportunity?.sscPercentage != null && opportunity.sscPercentage !== "") {
+    lines.push(`SSC Percentage ≥ ${opportunity.sscPercentage}%`);
+  }
+  if (opportunity?.hscPercentage != null && opportunity.hscPercentage !== "") {
+    lines.push(`HSC Percentage ≥ ${opportunity.hscPercentage}%`);
+  }
+  if (opportunity?.cgpa != null && opportunity.cgpa !== "") {
+    const cgpa = Number(opportunity.cgpa);
+    lines.push(`CGPA ≥ ${Number.isInteger(cgpa) ? cgpa.toFixed(1) : cgpa}`);
+  }
+  return lines;
+};
+
 const getDepartmentList = (department) => {
   if (department === OPPORTUNITY_BROADCAST_ALL) return DEPARTMENTS;
   if (Array.isArray(department)) return department;
@@ -540,6 +555,21 @@ const OpportunityCard = ({
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-red-900 text-sm sm:text-base">Eligibility</p>
                       <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-red-800 leading-5 sm:leading-6 break-words">{toLabel(opportunity.eligibilityCriteria)}</p>
+                      {getAcademicEligibilityLines(opportunity).length > 0 && (
+                        <div className="mt-3 border-t border-red-200/70 pt-3">
+                          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-red-700">
+                            Academic requirements
+                          </p>
+                          <ul className="space-y-1.5 text-xs sm:text-sm text-red-800">
+                            {getAcademicEligibilityLines(opportunity).map((line) => (
+                              <li key={line} className="flex items-center gap-2">
+                                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" aria-hidden="true" />
+                                <span>{line}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

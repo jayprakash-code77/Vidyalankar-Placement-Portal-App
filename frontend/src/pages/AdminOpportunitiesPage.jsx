@@ -15,6 +15,9 @@ const initial = {
   description: "",
   eligibilityCriteria: [],
   eligibleGenders: [...GENDER_OPTIONS],
+  sscPercentage: "",
+  hscPercentage: "",
+  cgpa: "",
   lastDate: "",
   department: OPPORTUNITY_BROADCAST_ALL,
   technicalSkills: [],
@@ -81,6 +84,9 @@ const AdminOpportunitiesPage = () => {
             Array.isArray(item.eligibleGenders) && item.eligibleGenders.length > 0
               ? item.eligibleGenders
               : [...GENDER_OPTIONS],
+          sscPercentage: item.sscPercentage ?? "",
+          hscPercentage: item.hscPercentage ?? "",
+          cgpa: item.cgpa ?? "",
         });
         setEditingId(item._id);
       } catch (err) {
@@ -100,6 +106,27 @@ const AdminOpportunitiesPage = () => {
     setSearchParams({});
   };
 
+  const validateAcademicEligibility = () => {
+    const toOptionalNumber = (value, min, max, label) => {
+      if (value === undefined || value === null || value === "") return null;
+      const n = Number(value);
+      if (Number.isNaN(n)) return `${label} must be a number`;
+      if (n < min || n > max) return `${label} must be between ${min} and ${max}`;
+      return null;
+    };
+    return (
+      toOptionalNumber(form.sscPercentage, 0, 100, "SSC percentage") ||
+      toOptionalNumber(form.hscPercentage, 0, 100, "HSC percentage") ||
+      toOptionalNumber(form.cgpa, 0, 10, "CGPA")
+    );
+  };
+
+  const buildAcademicPayload = () => ({
+    sscPercentage: form.sscPercentage === "" || form.sscPercentage == null ? null : Number(form.sscPercentage),
+    hscPercentage: form.hscPercentage === "" || form.hscPercentage == null ? null : Number(form.hscPercentage),
+    cgpa: form.cgpa === "" || form.cgpa == null ? null : Number(form.cgpa),
+  });
+
   const createOpportunity = async () => {
     setError("");
     setMessage("");
@@ -108,6 +135,11 @@ const AdminOpportunitiesPage = () => {
       : Boolean(form.eligibilityCriteria);
     if (!form.announcementHeading || !form.type || !form.description || !hasEligibility || !form.lastDate || !form.department) {
       setError("Please fill all required fields.");
+      return;
+    }
+    const academicError = validateAcademicEligibility();
+    if (academicError) {
+      setError(academicError);
       return;
     }
     setSaving(true);
@@ -127,6 +159,7 @@ const AdminOpportunitiesPage = () => {
           : (form.eligibilityCriteria || "").trim(),
         eligibleYears: eligibleYearsArray,
         eligibleGenders: Array.isArray(form.eligibleGenders) ? form.eligibleGenders : [...GENDER_OPTIONS],
+        ...buildAcademicPayload(),
       };
       await api.post("/opportunities", payload);
       resetForm();
@@ -166,6 +199,11 @@ const AdminOpportunitiesPage = () => {
       setError("Please fill all required fields.");
       return;
     }
+    const academicError = validateAcademicEligibility();
+    if (academicError) {
+      setError(academicError);
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -181,6 +219,7 @@ const AdminOpportunitiesPage = () => {
           ? form.eligibilityCriteria.filter(Boolean)
           : [],
         eligibleGenders: Array.isArray(form.eligibleGenders) ? form.eligibleGenders : [...GENDER_OPTIONS],
+        ...buildAcademicPayload(),
       };
       await updateOpportunity(editingId, payload);
       resetForm();

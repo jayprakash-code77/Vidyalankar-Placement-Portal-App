@@ -34,6 +34,10 @@ const opportunitySchema = new mongoose.Schema(
       enum: GENDER_OPTIONS,
       default: GENDER_OPTIONS,
     },
+    // Minimum academic eligibility (optional; null = no restriction)
+    sscPercentage: { type: Number, min: 0, max: 100, default: null },
+    hscPercentage: { type: Number, min: 0, max: 100, default: null },
+    cgpa: { type: Number, min: 0, max: 10, default: null },
     lastDate: { type: Date, required: true },
     status: { type: String, enum: ["active", "archived"], default: "active", index: true },
     department: { type: String, required: true, trim: true },

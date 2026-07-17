@@ -14,6 +14,8 @@ const {
   buildDepartmentAudienceMatch,
   buildYearEligibilityMatch,
   buildGenderEligibilityMatch,
+  buildAcademicEligibilityMatch,
+  studentMeetsAcademicEligibility,
   userDepartmentMatchesOpportunity,
   canFacultyCollaborateOnOpportunity,
   canFacultyDeleteOpportunity,
@@ -118,6 +120,32 @@ const validatePayload = (payload) => {
   return null;
 };
 
+const parseOptionalAcademicNumber = (value, min, max, label) => {
+  if (value === undefined || value === null || value === "") return null;
+  const n = Number(value);
+  if (Number.isNaN(n)) {
+    throw new Error(`${label} must be a number`);
+  }
+  if (n < min || n > max) {
+    throw new Error(`${label} must be between ${min} and ${max}`);
+  }
+  return n;
+};
+
+const parseAcademicEligibilityFields = (body = {}, existing = {}) => {
+  const resolve = (key, min, max, label) => {
+    if (body[key] === undefined) {
+      return existing[key] !== undefined ? existing[key] : null;
+    }
+    return parseOptionalAcademicNumber(body[key], min, max, label);
+  };
+  return {
+    sscPercentage: resolve("sscPercentage", 0, 100, "SSC percentage"),
+    hscPercentage: resolve("hscPercentage", 0, 100, "HSC percentage"),
+    cgpa: resolve("cgpa", 0, 10, "CGPA"),
+  };
+};
+
 const parseEligibleGenders = (raw) => {
   if (!raw) return GENDER_OPTIONS;
   const values = Array.isArray(raw)
@@ -170,6 +198,9 @@ const listOpportunities = async (req, res) => {
       }
       if (req.user.role === "student" && req.user.gender) {
         Object.assign(filter, buildGenderEligibilityMatch(req.user.gender));
+      }
+      if (req.user.role === "student") {
+        Object.assign(filter, buildAcademicEligibilityMatch(req.user.academicInfo));
       }
     }
 
@@ -261,6 +292,16 @@ const getOpportunityById = async (req, res) => {
           return fail(res, 403, `Forbidden - opportunity not available for your year (${req.user.year})`);
         }
       }
+
+      if (
+        req.user.role === "student" &&
+        !studentMeetsAcademicEligibility(req.user.academicInfo, opportunity)
+      ) {
+        console.warn(
+          `[OPPORTUNITY 403] Student ${req.user.email} denied access due to academic eligibility`
+        );
+        return fail(res, 403, "Forbidden - you do not meet the academic eligibility criteria");
+      }
     }
 
     console.log(`[OPPORTUNITY ✓] ${req.user.role} ${req.user.email} accessed opportunity ${req.params.id}`);
@@ -295,6 +336,13 @@ const createOpportunity = async (req, res) => {
       derivedStatus: status
     });
 
+    let academicFields;
+    try {
+      academicFields = parseAcademicEligibilityFields(req.body);
+    } catch (academicError) {
+      return fail(res, 400, academicError.message);
+    }
+
     const payload = {
       ...req.body,
       announcementHeading: sanitizeString(req.body.announcementHeading),
@@ -309,6 +357,7 @@ const createOpportunity = async (req, res) => {
       createdName: req.user.name || req.user.email || "Unknown",
       lastDate: normalizedLastDate,
       eligibleGenders: parseEligibleGenders(req.body.eligibleGenders),
+      ...academicFields,
     };
 
     // Faculty can only create opportunities for their own department
@@ -403,6 +452,13 @@ const updateOpportunity = async (req, res) => {
       newStatus: status
     });
 
+    let academicFields;
+    try {
+      academicFields = parseAcademicEligibilityFields(req.body, existing);
+    } catch (academicError) {
+      return fail(res, 400, academicError.message);
+    }
+
     const payload = {
       ...req.body,
       announcementHeading: sanitizeString(req.body.announcementHeading),
@@ -415,6 +471,7 @@ const updateOpportunity = async (req, res) => {
         : sanitizeString(req.body.eligibilityCriteria),
       lastDate: normalizedLastDate,
       eligibleGenders: parseEligibleGenders(req.body.eligibleGenders ?? existing.eligibleGenders),
+      ...academicFields,
     };
 
     // Faculty can only create opportunities for their own department
@@ -502,6 +559,9 @@ const getActiveOpportunities = async (req, res) => {
           `[OPPORTUNITY ACTIVE] Fetching active opportunities for ${req.user.role} ${req.user.email} (dept: ${req.user.department})`
         );
       }
+      if (req.user.role === "student") {
+        Object.assign(filter, buildAcademicEligibilityMatch(req.user.academicInfo));
+      }
     } else {
       console.log(`[OPPORTUNITY ACTIVE] Fetching active opportunities for ${req.user.role}: ${req.user.email}`);
     }
@@ -585,6 +645,9 @@ const getArchivedOpportunities = async (req, res) => {
         console.log(
           `[OPPORTUNITY ARCHIVED] Fetching archived opportunities for ${req.user.role} ${req.user.email} (dept: ${req.user.department})`
         );
+      }
+      if (req.user.role === "student") {
+        Object.assign(filter, buildAcademicEligibilityMatch(req.user.academicInfo));
       }
     } else {
       console.log(`[OPPORTUNITY ARCHIVED] Fetching archived opportunities for ${req.user.role}: ${req.user.email}`);

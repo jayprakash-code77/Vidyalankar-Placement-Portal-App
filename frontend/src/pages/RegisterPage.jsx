@@ -70,9 +70,7 @@ const RegisterPage = () => {
       const data = extractApiData(response);
       if (data?.otpDelivery === "failed") {
         setMsg("⚠️ Email delivery failed. Please contact support.");
-      } else {
-        setMsg("✅ Account created (pending verification). Check your email for OTP.");
-      }
+      } 
       setStep(2);
     } catch (err) {
       setError(extractApiError(err, "Registration failed"));
@@ -111,10 +109,11 @@ const RegisterPage = () => {
         <Motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel relative w-full max-w-2xl space-y-4 xs:space-y-5 border-slate-200/80 p-4 xs:p-5 sm:p-7 rounded-2xl xs:rounded-2xl">
         <div className="flex flex-col xs:flex-row items-start gap-2 xs:gap-3">
           <div className="flex-1 min-w-0">
+            {/*             
             <div className="mb-1.5 inline-flex items-center gap-2 rounded-full border border-red-100 bg-red-50 px-2 xs:px-2.5 py-0.5 xs:py-1 text-xs font-medium text-red-700">
               <Sparkles size={12} className="xs:size-3.5" />
               Student Registration
-            </div>
+            </div> */}
             <h1 className="text-xl xs:text-2xl font-semibold text-slate-900">Create Student Account</h1>
             <p className="mt-1 text-xs xs:text-sm text-slate-600">
               {step === 1

@@ -95,6 +95,33 @@ const canViewOpportunityAsAudience = (user, opportunity) => {
     }
   }
 
+  // Check academic eligibility for students (SSC / HSC / CGPA minima)
+  if (user.role === "student" && !studentMeetsAcademicEligibility(user.academicInfo, opportunity)) {
+    return false;
+  }
+
+  return true;
+};
+
+const hasNumericValue = (value) =>
+  value !== undefined && value !== null && value !== "" && !Number.isNaN(Number(value));
+
+/**
+ * True if the student satisfies every defined academic minimum on the opportunity.
+ * Null / missing opportunity criteria are ignored.
+ */
+const studentMeetsAcademicEligibility = (academicInfo = {}, opportunity = {}) => {
+  const checks = [
+    { required: opportunity.sscPercentage, actual: academicInfo?.sscPercentage },
+    { required: opportunity.hscPercentage, actual: academicInfo?.hscPercentage },
+    { required: opportunity.cgpa, actual: academicInfo?.cgpa },
+  ];
+
+  for (const { required, actual } of checks) {
+    if (!hasNumericValue(required)) continue;
+    if (!hasNumericValue(actual)) return false;
+    if (Number(actual) < Number(required)) return false;
+  }
   return true;
 };
 
@@ -132,6 +159,35 @@ const buildGenderEligibilityMatch = (userGender) => {
   };
 };
 
+/**
+ * Build a Mongo $match fragment for academic eligibility (students only).
+ * Uses top-level $and so it does not overwrite department/year/gender $or filters.
+ * Null / missing opportunity criteria are treated as no restriction.
+ */
+const buildAcademicEligibilityMatch = (academicInfo = {}) => {
+  const buildFieldMatch = (field, studentValue) => {
+    const unrestricted = [
+      { [field]: { $exists: false } },
+      { [field]: null },
+    ];
+    if (hasNumericValue(studentValue)) {
+      return {
+        $or: [...unrestricted, { [field]: { $lte: Number(studentValue) } }],
+      };
+    }
+    // Student has no value — only opportunities without this criterion
+    return { $or: unrestricted };
+  };
+
+  return {
+    $and: [
+      buildFieldMatch("sscPercentage", academicInfo?.sscPercentage),
+      buildFieldMatch("hscPercentage", academicInfo?.hscPercentage),
+      buildFieldMatch("cgpa", academicInfo?.cgpa),
+    ],
+  };
+};
+
 module.exports = {
   escapeRegex,
   parseOpportunityDepartments,
@@ -139,6 +195,8 @@ module.exports = {
   buildDepartmentAudienceMatch,
   buildYearEligibilityMatch,
   buildGenderEligibilityMatch,
+  buildAcademicEligibilityMatch,
+  studentMeetsAcademicEligibility,
   isCreator,
   canFacultyCollaborateOnOpportunity,
   canFacultyDeleteOpportunity,

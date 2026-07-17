@@ -79,10 +79,12 @@ const LoginPage = () => {
       >
         <div className="mb-1 flex flex-col items-start gap-2">
           <div className="w-full">
+            {/* 
             <div className="mb-1.5 inline-flex items-center gap-2 rounded-full border border-red-100 bg-red-50 px-2 xs:px-2.5 py-0.5 xs:py-1 text-xs font-medium text-red-700">
               <ShieldCheck size={12} className="xs:size-3.5" />
               Secure access
             </div>
+              */}
             <h1 className="text-xl xs:text-2xl font-semibold text-slate-900">Welcome back</h1>
             <p className="mt-1 text-xs xs:text-sm text-slate-600">Login to continue to your placement portal dashboard.</p>
           </div>

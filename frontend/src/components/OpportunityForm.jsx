@@ -286,8 +286,8 @@ const OpportunityForm = ({
 
         {/* Internal gender eligibility — not shown on opportunity cards */}
         <div className="md:col-span-2">
-          <span className="label-modern text-sm">Internal Gender Filter (not shown publicly)</span>
-          <p className="text-xs text-slate-500 mb-2">Used only for backend eligibility filtering when students browse opportunities.</p>
+          <span className="label-modern text-sm">Select Gender</span>
+          {/* <p className="text-xs text-slate-500 mb-2">Used only for backend eligibility filtering when students browse opportunities.</p> */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {GENDER_OPTIONS.map((gender) => (
               <label key={gender} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
@@ -302,6 +302,76 @@ const OpportunityForm = ({
             ))}
           </div>
         </div>
+
+        {/* Academic eligibility minima */}
+        <fieldset className="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5">
+          <legend className="sr-only">Academic eligibility criteria</legend>
+          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Academic Eligibility Criteria</p>
+              {/* <p className="mt-1 text-xs leading-5 text-slate-500">
+                Set the minimum scores required to view this opportunity.
+              </p> */}
+            </div>
+            <span className="mt-1 w-fit rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-500 sm:mt-0">
+              Optional
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <label className="block">
+              <span className="label-modern text-sm">SSC Percentage</span>
+              <input
+                type="number"
+                className="input-modern"
+                min={0}
+                max={100}
+                step="0.01"
+                placeholder="75"
+                value={value.sscPercentage ?? ""}
+                onChange={(event) => pushNext({ sscPercentage: event.target.value })}
+                aria-label="Minimum SSC percentage"
+              />
+              {/* <span className="mt-1.5 block text-xs text-slate-500">Allowed range: 0–100</span> */}
+            </label>
+
+            <label className="block">
+              <span className="label-modern text-sm">HSC Percentage</span>
+              <input
+                type="number"
+                className="input-modern"
+                min={0}
+                max={100}
+                step="0.01"
+                placeholder="70"
+                value={value.hscPercentage ?? ""}
+                onChange={(event) => pushNext({ hscPercentage: event.target.value })}
+                aria-label="Minimum HSC percentage"
+              />
+              {/* <span className="mt-1.5 block text-xs text-slate-500">Allowed range: 0–100</span> */}
+            </label>
+
+            <label className="block">
+              <span className="label-modern text-sm">CGPA</span>
+              <input
+                type="number"
+                className="input-modern"
+                min={0}
+                max={10}
+                step="0.01"
+                placeholder="8.25"
+                value={value.cgpa ?? ""}
+                onChange={(event) => pushNext({ cgpa: event.target.value })}
+                aria-label="Minimum CGPA"
+              />
+              {/* <span className="mt-1.5 block text-xs text-slate-500">Allowed range: 0–10</span> */}
+            </label>
+          </div>
+
+          {/* <p className="mt-4 border-t border-slate-200 pt-3 text-xs leading-5 text-slate-500">
+            Blank fields are not considered when checking student eligibility.
+          </p> */}
+        </fieldset>
 
         {/* Last Date */}
         <label>

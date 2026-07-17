@@ -27,6 +27,9 @@ const getInitialForm = (facultyDepartment) => ({
   description: "",
   eligibilityCriteria: [],
   eligibleGenders: [...GENDER_OPTIONS],
+  sscPercentage: "",
+  hscPercentage: "",
+  cgpa: "",
   lastDate: "",
   department: facultyDepartment || "",
   technicalSkills: [],
@@ -48,6 +51,9 @@ const normalizeToForm = (item) => ({
   eligibleGenders: Array.isArray(item.eligibleGenders) && item.eligibleGenders.length > 0
     ? item.eligibleGenders
     : [...GENDER_OPTIONS],
+  sscPercentage: item.sscPercentage ?? "",
+  hscPercentage: item.hscPercentage ?? "",
+  cgpa: item.cgpa ?? "",
 });
 
 const isArchived = (item) => {
@@ -170,7 +176,20 @@ const FacultyOpportunitiesPage = () => {
     if (!form.department || form.department.trim() === "") {
       return "Department is required. Please ensure your profile has a department assigned.";
     }
-    return "";
+
+    const toOptionalNumber = (value, min, max, label) => {
+      if (value === undefined || value === null || value === "") return "";
+      const n = Number(value);
+      if (Number.isNaN(n)) return `${label} must be a number`;
+      if (n < min || n > max) return `${label} must be between ${min} and ${max}`;
+      return "";
+    };
+    return (
+      toOptionalNumber(form.sscPercentage, 0, 100, "SSC percentage") ||
+      toOptionalNumber(form.hscPercentage, 0, 100, "HSC percentage") ||
+      toOptionalNumber(form.cgpa, 0, 10, "CGPA") ||
+      ""
+    );
   };
 
   const buildPayload = () => {
@@ -187,6 +206,9 @@ const FacultyOpportunitiesPage = () => {
         ? form.eligibilityCriteria.filter(Boolean)
         : [],
       eligibleGenders: Array.isArray(form.eligibleGenders) ? form.eligibleGenders : [...GENDER_OPTIONS],
+      sscPercentage: form.sscPercentage === "" || form.sscPercentage == null ? null : Number(form.sscPercentage),
+      hscPercentage: form.hscPercentage === "" || form.hscPercentage == null ? null : Number(form.hscPercentage),
+      cgpa: form.cgpa === "" || form.cgpa == null ? null : Number(form.cgpa),
     };
     console.log('[FACULTY_FORM] Building payload with department:', {
       department: payload.department,
